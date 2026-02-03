@@ -47,17 +47,19 @@ def analyze_log(csv_path, target_ids):
             reader = csv.reader(f)
             header = next(reader)
             
-            # Identify the event name column intelligently based on common headers
-            # (Trino: #event_name, $part_event | MaxCompute: event_name)
-            possible_event_headers = ['#event_name', '$part_event', 'event_name']
-            event_col_idx = 1  # Default to 2nd column
-            
+            # Identify potential event name columns (Trino: #event_name, $part_event | MaxCompute: event_name)
+            possible_headers = ['#event_name', '$part_event', 'event_name']
+            event_indices = []
             for h_idx, h_name in enumerate(header):
-                if h_name.lower() in [ph.lower() for ph in possible_event_headers]:
-                    event_col_idx = h_idx
-                    break
+                if h_name.lower() in [ph.lower() for ph in possible_headers]:
+                    event_indices.append(h_idx)
             
-            print(f"[*] Detected event name in column: '{header[event_col_idx]}' (Index {event_col_idx})")
+            # Fallback to index 1 (2nd column) if no standard headers found
+            if not event_indices:
+                event_indices = [1]
+            
+            detected_names = [header[i] for i in event_indices if i < len(header)]
+            print(f"[*] Monitoring event columns: {detected_names}")
             
             row_count = 0
             for row in reader:
@@ -72,8 +74,14 @@ def analyze_log(csv_path, target_ids):
                         
                     for tid in target_ids:
                         if tid in cell_value:
-                            # Record the dynamically detected event name and column name
-                            event_name = row[event_col_idx] if len(row) > event_col_idx else "Unknown"
+                            # Dynamically determine the event name by checking candidate columns
+                            # Picks the first non-empty value from detected event columns
+                            event_name = "Unknown"
+                            for e_idx in event_indices:
+                                if e_idx < len(row) and row[e_idx].strip():
+                                    event_name = row[e_idx]
+                                    break
+                                    
                             col_name = header[col_idx] if col_idx < len(header) else f"Column_{col_idx}"
                             
                             key = (event_name, col_name)
