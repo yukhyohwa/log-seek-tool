@@ -47,21 +47,33 @@ def analyze_log(csv_path, target_ids):
             reader = csv.reader(f)
             header = next(reader)
             
+            # Identify the event name column intelligently based on common headers
+            # (Trino: #event_name, $part_event | MaxCompute: event_name)
+            possible_event_headers = ['#event_name', '$part_event', 'event_name']
+            event_col_idx = 1  # Default to 2nd column
+            
+            for h_idx, h_name in enumerate(header):
+                if h_name.lower() in [ph.lower() for ph in possible_event_headers]:
+                    event_col_idx = h_idx
+                    break
+            
+            print(f"[*] Detected event name in column: '{header[event_col_idx]}' (Index {event_col_idx})")
+            
             row_count = 0
             for row in reader:
                 row_count += 1
                 if row_count % 200000 == 0:
                     print(f"[#] Processed {row_count} rows...")
                 
-                # Iterate through each column to support substring matching (e.g., searching within JSON like 'a_rst')
+                # Iterate through each column to support substring matching
                 for col_idx, cell_value in enumerate(row):
                     if not cell_value:
                         continue
                         
                     for tid in target_ids:
                         if tid in cell_value:
-                            # Record event name (assumed to be index 1) and column name
-                            event_name = row[1] if len(row) > 1 else "Unknown"
+                            # Record the dynamically detected event name and column name
+                            event_name = row[event_col_idx] if len(row) > event_col_idx else "Unknown"
                             col_name = header[col_idx] if col_idx < len(header) else f"Column_{col_idx}"
                             
                             key = (event_name, col_name)
