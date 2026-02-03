@@ -53,16 +53,19 @@ def analyze_log(csv_path, target_ids):
                 if row_count % 200000 == 0:
                     print(f"[#] Processed {row_count} rows...")
                 
-                # Check for target IDs in the current row
-                for tid in target_ids:
-                    if tid in row:
-                        # Record event name (assumed to be index 1) and column name
-                        event_name = row[1] if len(row) > 1 else "Unknown"
-                        col_idx = row.index(tid)
-                        col_name = header[col_idx] if col_idx < len(header) else f"Column_{col_idx}"
+                # Iterate through each column to support substring matching (e.g., searching within JSON like 'a_rst')
+                for col_idx, cell_value in enumerate(row):
+                    if not cell_value:
+                        continue
                         
-                        key = (event_name, col_name)
-                        results[tid][key] = results[tid].get(key, 0) + 1
+                    for tid in target_ids:
+                        if tid in cell_value:
+                            # Record event name (assumed to be index 1) and column name
+                            event_name = row[1] if len(row) > 1 else "Unknown"
+                            col_name = header[col_idx] if col_idx < len(header) else f"Column_{col_idx}"
+                            
+                            key = (event_name, col_name)
+                            results[tid][key] = results[tid].get(key, 0) + 1
                         
     except Exception as e:
         print(f"[!] Error during reading: {e}")
