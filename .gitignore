@@ -1,0 +1,22 @@
+# --- 原始数据 (CSV 日志) ---
+raw_data/
+*.csv
+*.tsv
+*.log
+*.txt
+
+# --- Python 缓存 ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- 临时/备份文件 ---
+*.tmp
+*.bak
+*.swp
+
+# --- 操作系统/IDE ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
