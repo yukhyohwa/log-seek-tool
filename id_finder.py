@@ -47,8 +47,8 @@ def analyze_log(csv_path, target_ids):
             reader = csv.reader(f)
             header = next(reader)
             
-            # Identify potential event name columns (Trino: #event_name, $part_event | MaxCompute: event_name)
-            possible_headers = ['#event_name', '$part_event', 'event_name']
+            # Identify potential event name columns (Trino: #event_name, $part_event | MaxCompute: event_name， a_typ)
+            possible_headers = ['#event_name', '$part_event', 'event_name', 'a_typ']
             event_indices = []
             for h_idx, h_name in enumerate(header):
                 if h_name.lower() in [ph.lower() for ph in possible_headers]:
